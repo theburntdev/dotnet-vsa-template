@@ -16,6 +16,6 @@ public class ListTodoItemsEndpoint : IEndpoint
         })
         .WithValidation<ListTodoItemsRequest>()
         .WithTags("TodoItems")
-        .WithName("ListTodoItems");
+        .WithName(nameof(ListTodoItemsEndpoint)[..^"Endpoint".Length]);
     }
 }

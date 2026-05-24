@@ -15,6 +15,6 @@ public class DeleteTodoItemEndpoint : IEndpoint
             return result.ToHttpResult();
         })
         .WithTags("TodoItems")
-        .WithName("DeleteTodoItem");
+        .WithName(nameof(DeleteTodoItemEndpoint)[..^"Endpoint".Length]);
     }
 }

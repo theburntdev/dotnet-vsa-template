@@ -18,6 +18,6 @@ public class UpdateTodoItemEndpoint : IEndpoint
         })
         .WithValidation<UpdateTodoItemRequest>()
         .WithTags("TodoItems")
-        .WithName("UpdateTodoItem");
+        .WithName(nameof(UpdateTodoItemEndpoint)[..^"Endpoint".Length]);
     }
 }

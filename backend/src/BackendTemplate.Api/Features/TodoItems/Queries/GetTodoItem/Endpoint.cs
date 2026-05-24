@@ -15,6 +15,6 @@ public class GetTodoItemEndpoint : IEndpoint
             return result.ToHttpResult(x => x);
         })
         .WithTags("TodoItems")
-        .WithName("GetTodoItem");
+        .WithName(nameof(GetTodoItemEndpoint)[..^"Endpoint".Length]);
     }
 }

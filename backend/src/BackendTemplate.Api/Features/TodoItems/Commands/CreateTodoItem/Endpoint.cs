@@ -19,6 +19,6 @@ public class CreateTodoItemEndpoint : IEndpoint
         })
         .WithValidation<CreateTodoItemRequest>()
         .WithTags("TodoItems")
-        .WithName("CreateTodoItem");
+        .WithName(nameof(CreateTodoItemEndpoint)[..^"Endpoint".Length]);
     }
 }
