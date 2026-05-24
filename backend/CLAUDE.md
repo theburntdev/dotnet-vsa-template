@@ -263,15 +263,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 - Global exception handler implemented as `IExceptionHandler` in `BackendTemplate.Api` — maps unhandled exceptions → `500` Problem Details only. Does not handle `ValidationException` — validation errors are handled exclusively by `ValidationFilter`.
 
 ## External service ports (in `BackendTemplate.Domain`)
-Domain defines port interfaces for external capabilities it needs. `Infrastructure` implements them:
-```csharp
-// BackendTemplate.Domain.Ports
-public interface IEmailSender
-{
-    Task SendAsync(string to, string subject, string body, CancellationToken ct = default);
-}
-```
-Handlers inject the domain interface. `Infrastructure` registers the implementation via `AddInfrastructure()`. Lifetime set via marker interface on the implementation class.
+Domain defines port interfaces for external capabilities it needs. `Infrastructure` implements them. Handlers inject the domain interface. `Infrastructure` registers the implementation via `AddInfrastructure()`. Lifetime set via marker interface on the implementation class.
 
 ## Test data builders (in `BackendTemplate.Testing.Common`)
 - One builder per domain entity, named `<Entity>Builder` (e.g., `TodoItemBuilder`).
