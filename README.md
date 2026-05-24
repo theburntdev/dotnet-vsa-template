@@ -1,2 +1,89 @@
 # dotnet-vsa-template
-Modern Vertical Slice Architecture Backend Approach
+
+Modern Vertical Slice Architecture backend template — .NET 10, minimal APIs, EF Core + Postgres.
+
+See [`backend/CLAUDE.md`](backend/CLAUDE.md) for full architecture and coding conventions.
+
+## Prerequisites
+
+| Tool | Version | Install |
+|------|---------|---------|
+| .NET SDK | 10.0+ | [dot.net](https://dot.net) |
+| Docker Desktop | any | [docker.com](https://www.docker.com/products/docker-desktop) |
+| dotnet-ef (global tool) | 10.0+ | `dotnet tool install -g dotnet-ef` |
+
+Docker is required for both local Postgres and the Testcontainers-based integration tests.
+
+## Local setup
+
+### 1. Start Postgres
+
+```bash
+docker compose up -d
+```
+
+This starts a Postgres 16 container on port `5432` with:
+- Database: `backendtemplate`
+- Username: `postgres`
+- Password: `postgres`
+
+### 2. Set the connection string
+
+```bash
+dotnet user-secrets set "ConnectionStrings:Default" \
+  "Host=localhost;Port=5432;Database=backendtemplate;Username=postgres;Password=postgres" \
+  --project backend/src/BackendTemplate.Api
+```
+
+### 3. Apply migrations
+
+```bash
+dotnet ef database update \
+  --project backend/src/BackendTemplate.Infrastructure \
+  --startup-project backend/src/BackendTemplate.Api
+```
+
+### 4. Run the API
+
+```bash
+dotnet watch --project backend/src/BackendTemplate.Api
+```
+
+API available at `https://localhost:5001`
+
+| Endpoint | URL |
+|----------|-----|
+| Scalar UI | `https://localhost:5001/scalar/v1` |
+| OpenAPI JSON | `https://localhost:5001/openapi/v1.json` |
+| Liveness | `https://localhost:5001/health/live` |
+| Readiness | `https://localhost:5001/health/ready` |
+
+## Running tests
+
+Tests use Testcontainers — Docker must be running. No manual Postgres setup needed for tests.
+
+```bash
+dotnet test backend/
+```
+
+## Solution structure
+
+```
+backend/
+  src/
+    BackendTemplate.Api/          # ASP.NET Core host, feature slices, endpoint registration
+    BackendTemplate.Domain/       # Entities, value objects, domain logic, port interfaces
+    BackendTemplate.Infrastructure/  # EF DbContext, migrations, external service implementations
+  tests/
+    BackendTemplate.Api.Tests/
+    BackendTemplate.Domain.Tests/
+    BackendTemplate.Infrastructure.Tests/
+    BackendTemplate.Testing.Common/   # Shared builders, fixtures
+```
+
+## Stopping Postgres
+
+```bash
+docker compose down          # stop container, keep data
+docker compose down -v       # stop container and delete data
+```
