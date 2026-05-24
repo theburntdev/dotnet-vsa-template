@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>13</LangVersion>
+    <UserSecretsId>backendtemplate-api-secrets</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.*" />

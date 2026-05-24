@@ -41,6 +41,14 @@ app.MapHealthChecks("/health/ready");
 
 app.MapEndpoints(typeof(Program).Assembly);
 
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var urls = string.Join(", ", app.Urls);
+    app.Logger.LogInformation("Listening on: {Urls}", urls);
+    app.Logger.LogInformation("Scalar UI:    {Url}/scalar/v1", app.Urls.First());
+    app.Logger.LogInformation("OpenAPI JSON: {Url}/openapi/v1.json", app.Urls.First());
+});
+
 app.Run();
 
 public partial class Program { }

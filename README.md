@@ -41,8 +41,14 @@ dotnet ef database update --project backend/src/BackendTemplate.Infrastructure -
 
 ### 4. Run the API
 
-```bash
-dotnet watch --project backend/src/BackendTemplate.Api
+```powershell
+dotnet watch --project backend/src/BackendTemplate.Api --launch-profile https
+```
+
+First-time only — trust the dev certificate:
+
+```powershell
+dotnet dev-certs https --trust
 ```
 
 API available at `https://localhost:5001`
