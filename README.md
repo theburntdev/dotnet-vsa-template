@@ -4,6 +4,29 @@ Modern Vertical Slice Architecture backend template — .NET 10, minimal APIs, E
 
 See [`backend/CLAUDE.md`](backend/CLAUDE.md) for full architecture and coding conventions.
 
+## Using this template
+
+Install the template from a local clone of this repo:
+
+```powershell
+dotnet new install .
+```
+
+Scaffold a new project (replace `Acme.Orders` with your project name):
+
+```powershell
+dotnet new dotnet-vsa -n Acme.Orders
+cd Acme.Orders
+```
+
+All occurrences of `BackendTemplate` in file names, namespaces, and content are replaced with your project name automatically. Follow the [Local setup](#local-setup) steps below to get the generated project running.
+
+To uninstall the template:
+
+```powershell
+dotnet new uninstall .
+```
+
 ## Prerequisites
 
 | Tool | Version | Install |

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Brian Jong",
+  "classifications": ["Web", "WebAPI", "Vertical Slice"],
+  "identity": "DotnetVsa.Template",
+  "name": "Dotnet VSA Template",
+  "shortName": "dotnet-vsa",
+  "sourceName": "BackendTemplate",
+  "preferNameDirectory": true,
+  "defaultName": "MyApp",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "docs/**",
+            "**/.vs/**",
+            "**/bin/**",
+            "**/obj/**",
+            "**/.git/**"
+          ]
+        }
+      ]
+    }
+  ],
+  "postActions": [
+    {
+      "id": "restore",
+      "description": "Restore NuGet packages",
+      "actionId": "210D431B-A78B-4D2F-B762-4DC3F3AE9B31",
+      "continueOnError": true
+    }
+  ]
+}
