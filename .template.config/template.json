@@ -4,7 +4,7 @@
   "classifications": ["Web", "WebAPI", "Vertical Slice"],
   "identity": "DotnetVsa.Template",
   "name": "Dotnet VSA Template",
-  "shortName": "dotnet-vsa",
+  "shortName": "vsa-api",
   "sourceName": "BackendTemplate",
   "preferNameDirectory": true,
   "defaultName": "MyApp",
@@ -27,12 +27,5 @@
       ]
     }
   ],
-  "postActions": [
-    {
-      "id": "restore",
-      "description": "Restore NuGet packages",
-      "actionId": "210D431B-A78B-4D2F-B762-4DC3F3AE9B31",
-      "continueOnError": true
-    }
-  ]
+  "postActions": []
 }

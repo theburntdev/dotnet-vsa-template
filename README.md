@@ -15,7 +15,7 @@ dotnet new install .
 Scaffold a new project (replace `Acme.Orders` with your project name):
 
 ```powershell
-dotnet new dotnet-vsa -n Acme.Orders
+dotnet new vsa-api -n Acme.Orders
 cd Acme.Orders
 ```
 
