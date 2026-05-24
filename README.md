@@ -29,18 +29,14 @@ This starts a Postgres 16 container on port `5432` with:
 
 ### 2. Set the connection string
 
-```bash
-dotnet user-secrets set "ConnectionStrings:Default" \
-  "Host=localhost;Port=5432;Database=backendtemplate;Username=postgres;Password=postgres" \
-  --project backend/src/BackendTemplate.Api
+```powershell
+dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=backendtemplate;Username=postgres;Password=postgres" --project backend/src/BackendTemplate.Api
 ```
 
 ### 3. Apply migrations
 
-```bash
-dotnet ef database update \
-  --project backend/src/BackendTemplate.Infrastructure \
-  --startup-project backend/src/BackendTemplate.Api
+```powershell
+dotnet ef database update --project backend/src/BackendTemplate.Infrastructure --startup-project backend/src/BackendTemplate.Api
 ```
 
 ### 4. Run the API
