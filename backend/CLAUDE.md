@@ -68,7 +68,7 @@ dotnet ef database update --project backend/src/BackendTemplate.Infrastructure -
 - `204 No Content` on successful delete
 - Collection endpoints return arrays wrapped in a paged envelope: `{ "items": [...], "total": n, "page": n, "pageSize": n }`
 - Pagination via query params: `?page=1&pageSize=20` (1-based, offset model)
-- `PATCH` uses JSON Merge Patch (RFC 7396) — nullable properties only; `null` means clear the field, omit the field to leave it unchanged. Clients cannot use `null` to mean "no change" — they must omit the field instead.
+- `PATCH` uses JSON Merge Patch (RFC 7396) — nullable properties only; `null` is always a validation error. Clients omit fields they want to leave unchanged and provide a value for fields they want to update. Field clearing (setting to null) is not supported.
 - Authentication deferred — do not add auth middleware, JWT, or authorization attributes until explicitly tasked
 
 ## OpenAPI
@@ -89,7 +89,7 @@ Api/
         CreateTodoItem/
           Endpoint.cs       # IEndpoint implementation, endpoint registration
           Handler.cs        # Plain class with HandleAsync method
-          Validator.cs      # IValidator<CreateTodoItemRequest> — commands only
+          Validator.cs      # IValidator<CreateTodoItemRequest> — commands; queries with non-trivial params
           Request.cs        # Only if operation has a body or non-trivial query params
           Response.cs       # Only if operation returns a mapped DTO
       Queries/
@@ -115,7 +115,7 @@ File presence rules:
 - `Endpoint.cs` + `Handler.cs` — always present
 - `Request.cs` — only if operation has a request body (POST/PUT/PATCH) or non-trivial query params
 - `Response.cs` — only if operation returns a domain-mapped DTO (omit for `204 No Content`)
-- `Validator.cs` — commands only; omit for simple queries
+- `Validator.cs` — always for commands; also for queries that have a `Request.cs` with non-trivial params (e.g., pagination bounds); omit for queries with no `Request.cs`
 
 Shared mapper: if 3+ slices map the same **single entity** identically, promote to `Api/Features/TodoItems/TodoItemMapper.cs` at the feature root. Never create cross-feature mappers.
 
@@ -132,6 +132,8 @@ public interface IEndpoint
 app.MapEndpoints(typeof(Program).Assembly);
 ```
 Adding a new slice requires no changes to `Program.cs`.
+
+`IEndpoint` implementations must have parameterless constructors — they are stateless configuration objects, not services. All dependencies (handlers, etc.) are injected at request time via route handler parameters, not into the `IEndpoint` class itself.
 
 ## Handler structure
 All handlers — command and query — return `Result<T>`. No exceptions:
@@ -151,6 +153,7 @@ public sealed class CreateTodoItemHandler(AppDbContext db) : IScopedService
 - Query handlers return `Result<TResponse>` — endpoint forwards via `ToHttpResult`
 - Delete handlers return `Result<Unit>` — endpoint returns `204 No Content` via `ToHttpResult`
 - Every `HandleAsync` accepts `CancellationToken ct = default` as last parameter and forwards it to all async calls
+- EF Core exceptions from `SaveChangesAsync` are not expected failures — catch them explicitly in handlers only where a specific exception is anticipated (e.g., `DbUpdateConcurrencyException` on entities with concurrency tokens → `Result<T>.Failure(..., ErrorKind.Conflict)`). Do not wrap every `SaveChangesAsync` call defensively. All other EF exceptions bubble to the global handler → `500`.
 
 ## Validation
 FluentValidation runs via a generic endpoint filter — this is the **only** validation error path. Endpoints with a request body opt in:
@@ -162,7 +165,7 @@ app.MapPost("/todo-items", handler)
 // Api/Common/ValidationFilter.cs — shared, ~20 lines
 // Resolves IValidator<TRequest> from DI, runs validation, returns 422 Problem Details on failure
 ```
-Validators are registered automatically via `AddValidatorsFromAssembly`. No validator in DI = filter is a no-op, not an exception.
+Validators are registered automatically via `AddValidatorsFromAssembly`. If `.WithValidation<TRequest>()` is called but no `IValidator<TRequest>` is registered, an `InvalidOperationException` is thrown at startup — this is intentional to catch missing validators early.
 
 Never call `validator.ValidateAndThrow()` — always use the filter. The global exception handler does **not** handle `ValidationException`; it handles only unexpected exceptions → `500`.
 
@@ -186,8 +189,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 `AddInfrastructure()` is an extension method in `BackendTemplate.Infrastructure` that registers `AppDbContext`, external service implementations, and anything else Infrastructure owns. It may use Scrutor internally.
 
 - Handlers → `IScopedService`
-- Mapperly mappers (stateless) → `ISingletonService`
 - External service implementations → whichever lifetime suits the integration
+- Mapperly mappers are `static partial class` — not registered in DI at all
 
 ## Code conventions
 - Domain entities are plain C# classes with no EF attributes — use fluent config in `Infrastructure` via one `IEntityTypeConfiguration<TEntity>` class per entity.
@@ -196,14 +199,19 @@ builder.Services.AddInfrastructure(builder.Configuration);
   record struct TodoItemId(Guid Value);
   ```
   Never use raw `Guid` or `int` as entity ID types.
-- EF Core value conversion for strongly-typed IDs is registered via a bulk convention in `AppDbContext.ConfigureConventions()` using a single generic `StronglyTypedIdConverter<TId>`. Adding a new ID type requires one line in `ConfigureConventions` — no per-entity boilerplate in `IEntityTypeConfiguration`.
+- EF Core value conversion for strongly-typed IDs is registered via a bulk convention in `AppDbContext.ConfigureConventions()` using a single generic `StronglyTypedIdConverter<TId>`. The convention auto-discovers all `record struct` types with a single `Guid Value` property — adding a new ID type requires no changes anywhere.
 - Return `TypedResults.*` from endpoints, not raw status codes.
 - Use `record` types for DTOs (request/response shapes).
 - Never return domain entities from endpoints — always map to a response DTO.
 - **Mapper selection rule:**
-  - Single entity → response DTO: use **Mapperly** (in-memory, compile-time safe)
+  - Single entity → response DTO: use **Mapperly** (`static partial class`, compile-time safe, called as a static method — not injected via DI)
   - Multi-entity / denormalized response: use **inline EF Core `Select()` projection** (DB-level, fetches only required columns). Do not use Mapperly for cross-entity projections — it cannot be translated to SQL.
 - Mapper placement: Mapperly mapper lives in the slice folder that owns the mapping. Never put mappers in `Domain`.
+- Static mapper call site example:
+  ```csharp
+  // Endpoint.cs route handler — mapper called as static method, not injected
+  result.ToHttpResult(TodoItemMapper.ToResponse, location: r => $"/todo-items/{r.Id}")
+  ```
 - Async all the way down — every method touching I/O returns `Task<T>`.
 - Nullable reference types enabled (`<Nullable>enable</Nullable>`) — no `#nullable disable`, no `!` suppression without a comment explaining why.
 - Never throw exceptions for expected domain errors; use `Result<T>` (defined in `BackendTemplate.Domain.Common`).
@@ -218,6 +226,11 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
   enum ErrorKind { Validation, NotFound, Conflict }
   // ToHttpResult() maps: Validation → 422, NotFound → 404, Conflict → 409
+
+  // When to use each kind:
+  // Validation — domain business rule violated (structurally valid request, semantically wrong — e.g., "title must be unique")
+  // NotFound   — entity does not exist
+  // Conflict   — entity exists but is in the wrong state for the operation (e.g., "cannot delete a completed item")
 
   // Unit — for void operations (delete)
   Result<Unit>.Success(Unit.Value)
@@ -319,6 +332,8 @@ Handler tests are integration tests (Testcontainers + real DB). No `Application.
 - Do not call `validator.ValidateAndThrow()` — use the `ValidationFilter` exclusively.
 - Do not handle `ValidationException` in the global exception handler — the filter is the only validation error path.
 - Do not use Mapperly for multi-entity / denormalized projections — use inline EF Core `Select()` instead.
+- Do not register Mapperly mappers in DI or inject them as dependencies — they are `static partial class` and called as static methods.
+- Do not add constructor dependencies to `IEndpoint` implementations — they must have parameterless constructors; all dependencies are resolved at request time via route handler parameters.
 
 ## Environment / secrets
 - Connection string key: `ConnectionStrings:Default`
