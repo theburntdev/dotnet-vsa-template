@@ -15,7 +15,7 @@ public class ListTodoItemsEndpoint : IEndpoint
             return result.ToHttpResult(p => p);
         })
         .WithValidation<ListTodoItemsRequest>()
-        .WithTags("TodoItems")
+        .WithTags(Feature.Tag)
         .WithName(nameof(ListTodoItemsEndpoint)[..^"Endpoint".Length]);
     }
 }

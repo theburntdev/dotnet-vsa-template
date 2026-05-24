@@ -14,7 +14,7 @@ public class GetTodoItemEndpoint : IEndpoint
             var result = await handler.HandleAsync(id, ct);
             return result.ToHttpResult(x => x);
         })
-        .WithTags("TodoItems")
+        .WithTags(Feature.Tag)
         .WithName(nameof(GetTodoItemEndpoint)[..^"Endpoint".Length]);
     }
 }

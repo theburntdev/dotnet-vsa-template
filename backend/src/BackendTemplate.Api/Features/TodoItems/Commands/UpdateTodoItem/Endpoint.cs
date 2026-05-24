@@ -17,7 +17,7 @@ public class UpdateTodoItemEndpoint : IEndpoint
             return result.ToHttpResult(TodoItemMapper.ToResponse);
         })
         .WithValidation<UpdateTodoItemRequest>()
-        .WithTags("TodoItems")
+        .WithTags(Feature.Tag)
         .WithName(nameof(UpdateTodoItemEndpoint)[..^"Endpoint".Length]);
     }
 }

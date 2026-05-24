@@ -14,7 +14,7 @@ public class DeleteTodoItemEndpoint : IEndpoint
             var result = await handler.HandleAsync(id, ct);
             return result.ToHttpResult();
         })
-        .WithTags("TodoItems")
+        .WithTags(Feature.Tag)
         .WithName(nameof(DeleteTodoItemEndpoint)[..^"Endpoint".Length]);
     }
 }
